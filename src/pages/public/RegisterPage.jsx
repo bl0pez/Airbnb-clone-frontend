@@ -15,9 +15,16 @@ export const RegisterPage = () => {
     const handleSubmit = async(e) => {
         e.preventDefault();
 
-        await backendApi.post('/register', formState)
+        try {
+            await backendApi.post('/register', formState)
 
-        console.log('enviado');
+            console.log('enviado');
+        } catch (error) {
+
+            
+
+        }
+
 
     }
 
