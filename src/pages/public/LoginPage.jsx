@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useForm } from '../../hooks';
 import { backendApi } from '../../api';
+import { UserContext } from '../../context/UserContext';
 
 const initialState = {
   email: '',
@@ -12,6 +13,7 @@ const initialState = {
 export const LoginPage = () => {
 
   const { formState, email, password, onInputChange, onResetForm } = useForm(initialState);
+  const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
 
   const handleSubmit = async(e) => {
@@ -25,6 +27,7 @@ export const LoginPage = () => {
         alert('Error al iniciar sesión');
       }
 
+      setUser(response.data.user);
       navigate('/', { replace: true });
 
 
