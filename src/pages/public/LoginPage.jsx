@@ -28,7 +28,7 @@ export const LoginPage = () => {
       }
 
       setUser(response.data.user);
-      navigate('/', { replace: true });
+      navigate('/accoun', { replace: true });
 
 
     } catch (error) {
