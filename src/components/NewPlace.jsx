@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { HeaderInput } from "./HeaderInput";
 import { Perks } from "./Perks";
 import { MapBox } from "./MapBox";
-import DatePicker,  { registerLocale } from "react-datepicker";
+import DatePicker, { registerLocale } from "react-datepicker";
 import { addHours, differenceInSeconds } from 'date-fns';
 import es from 'date-fns/locale/es';
 import "react-datepicker/dist/react-datepicker.css";
+import { backendApi } from "../api/backendApi";
+import { fileUpload } from "../helpers/fileUpload";
 
 registerLocale('es', es);
 
@@ -30,6 +32,7 @@ export const NewPlace = () => {
     const [maxGuest, setMaxGuest] = useState(1);
 
     const [formValues, setFormValues] = useState(startTimes);
+    const fileInputRef = useRef(null);
 
     const onDateChange = (event, changing) => {
         setFormValues({
@@ -38,7 +41,41 @@ export const NewPlace = () => {
         });
     }
 
-    const addPhotoByLink = () => {
+    const addPhotoByLink = async (e) => {
+
+        e.preventDefault();
+
+        try {
+
+            const response = await backendApi.post('/upload-by-link', {
+                link: photoLink,
+            });
+
+            console.log(response.data);
+
+            setAddPhotos((prev) => [...prev, response.data.msg]);
+
+        } catch (error) {
+            console.log(error.message);
+        }
+    }
+
+    const onFileInputChange = async({ target }) => {
+
+        if(target.files.length === 0) return;
+
+        const files = target.files;
+
+        const fileUploadPromise = [];
+
+        for (const file of files){
+            fileUploadPromise.push(fileUpload(file));
+        }
+
+        const photosUrls = await Promise.all(fileUploadPromise);
+
+        setAddPhotos((prev) => [...prev, ...photosUrls]);
+        window.alert('Fotos subidas correctamente');
 
     }
 
@@ -51,8 +88,8 @@ export const NewPlace = () => {
                     description='Titulo para tu lugar. Debe ser corto y llamativo como en un anuncio'
                 />
                 <input
-                    className="input" 
-                    type="text" 
+                    className="input"
+                    type="text"
                     placeholder='title, for examble: My lovely apt' />
 
                 <HeaderInput
@@ -61,17 +98,39 @@ export const NewPlace = () => {
                 />
                 <div className='flex gap-2'>
                     <input
-                        className="input" 
-                        type="text" 
-                        placeholder={'Add using a link ...jpg'} />
-                    <button className="bg-gray-200 px-4 rounded-2xl">Add&nbsp;photo</button>
+                        className="input"
+                        type="text"
+                        placeholder={'Add using a link ...jpg'} 
+                        name="photoLink"
+                        value={photoLink}
+                        onChange={(event) => setPhotoLink(event.target.value)}
+                        />
+                    <button
+                        onClick={addPhotoByLink}
+                        className="bg-gray-200 px-4 rounded-2xl">
+                        Add&nbsp;photo
+                    </button>
                 </div>
-                <div className='mt-2 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6'>
-                    <button className='flex justify-center gap-1 items-center border bg-transparent rounded-2xl p-8 text-gray-600'>
+                <div className='mt-2 grid gap-2 grid-cols-3 md:grid-cols-4 lg:grid-cols-6'>
+                    {
+                        addPhotos.length > 0 &&
+                        addPhotos.map((photo) => (
+                            <div key={photo} >
+                                <img className="rounded-2xl" src={"http://localhost:3000/uploads/" + photo} alt="" />
+                            </div>
+                        ))
+                    }
+                    <label className='cursor-pointer flex justify-center gap-1 items-center border bg-transparent rounded-2xl p-8 text-gray-600'>
+                        <input 
+                            type="file" 
+                            hidden  
+                            multiple
+                            ref={fileInputRef} 
+                            onChange={onFileInputChange} />
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
                             <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                         </svg>
-                        Upload</button>
+                        Upload</label>
                 </div>
 
                 <HeaderInput
@@ -102,27 +161,27 @@ export const NewPlace = () => {
                     <div>
                         <h3 className='mt-2 -mb-1'>Día y hora de entrada</h3>
                         <DatePicker
-                        selected={formValues.start}
-                        className="input"
-                        onChange={(event) => onDateChange(event, 'end')}
-                        dateFormat="Pp"
-                        showTimeSelect
-                        locale="es"
-                        timeCaption='Hora'
-                    />
+                            selected={formValues.start}
+                            className="input"
+                            onChange={(event) => onDateChange(event, 'end')}
+                            dateFormat="Pp"
+                            showTimeSelect
+                            locale="es"
+                            timeCaption='Hora'
+                        />
                     </div>
                     <div>
                         <h3 className='mt-2 -mb-1'>Día y hora de salida</h3>
                         <DatePicker
-                        minDate={formValues.start}
-                        selected={formValues.end}
-                        className="input"
-                        onChange={(event) => onDateChange(event, 'end')}
-                        dateFormat="Pp"
-                        showTimeSelect
-                        locale="es"
-                        timeCaption='Hora'
-                    />
+                            minDate={formValues.start}
+                            selected={formValues.end}
+                            className="input"
+                            onChange={(event) => onDateChange(event, 'end')}
+                            dateFormat="Pp"
+                            showTimeSelect
+                            locale="es"
+                            timeCaption='Hora'
+                        />
                     </div>
                     <div>
                         <h3 className='mt-2 -mb-1'>
@@ -135,8 +194,8 @@ export const NewPlace = () => {
                     description='Busca tu direccion en el mapa'
                 />
 
-                    <MapBox />
-    
+                <MapBox />
+
                 <button className='primary my-4'>Crear</button>
             </form>
         </div>
